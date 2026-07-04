@@ -8,6 +8,9 @@ skip-lint = false
 [programs.localnet]
 agent_trust = "DQZdU6jeY2SF1bYXNv9NuEW9JK26ZEaRfNjWG4MoqcSX"
 
+[programs.devnet]
+agent_trust = "DQZdU6jeY2SF1bYXNv9NuEW9JK26ZEaRfNjWG4MoqcSX"
+
 [registry]
 url = "https://api.apr.dev"
 

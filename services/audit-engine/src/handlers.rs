@@ -108,6 +108,44 @@ pub async fn audit_execution(
         "execution audited"
     );
 
+    // Fired in the background, same as agent-core's call into this service:
+    // anchoring involves real on-chain confirmation latency (register +
+    // 2-of-3 Squads approval + execute), and the audit itself already
+    // succeeded and is stored regardless of whether the chain write lands.
+    {
+        let http = state.http.clone();
+        let blockchain_service_url = state.blockchain_service_url.clone();
+        let internal_secret = state.internal_secret.clone();
+        let agent_id = req.agent_id;
+        let audit_hash = audit_hash.clone();
+        tokio::spawn(async move {
+            let resp = http
+                .post(format!("{blockchain_service_url}/agents/{agent_id}/anchor"))
+                .header("x-internal-secret", &internal_secret)
+                .json(&serde_json::json!({
+                    "audit_hash": audit_hash,
+                    "trust_score": new_trust_score,
+                }))
+                .send()
+                .await;
+            match resp {
+                Ok(r) if r.status().is_success() => {
+                    tracing::info!(agent_id = %agent_id, "audit hash anchoring requested")
+                }
+                Ok(r) => tracing::warn!(
+                    agent_id = %agent_id,
+                    status = %r.status(),
+                    "blockchain-service rejected anchor request"
+                ),
+                Err(e) => tracing::warn!(
+                    agent_id = %agent_id,
+                    error = %e,
+                    "blockchain-service unreachable, audit left unanchored"
+                ),
+            }
+        });
+    }
+
     Ok(Json(audit))
 }
 

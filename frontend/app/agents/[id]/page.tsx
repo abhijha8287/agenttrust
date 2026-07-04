@@ -7,11 +7,14 @@ import { TrustGauge } from '@/components/TrustGauge';
 import {
   executeAction,
   getAgent,
+  listAnchors,
   listAudits,
   listExecutions,
   PERMISSION_RESOURCES,
+  solscanUrl,
   type Audit,
   type AgentDetail,
+  type ChainAnchor,
   type Execution,
   type PermissionResource,
 } from '@/lib/api';
@@ -39,6 +42,7 @@ export default function AgentProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [audits, setAudits] = useState<Audit[]>([]);
+  const [anchors, setAnchors] = useState<ChainAnchor[]>([]);
   const [resource, setResource] = useState<PermissionResource>('Filesystem');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +58,9 @@ export default function AgentProfilePage() {
         .catch(() => {});
       listAudits(params.id)
         .then(setAudits)
+        .catch(() => {});
+      listAnchors(params.id)
+        .then(setAnchors)
         .catch(() => {});
     }
     // Audits run in the background (two real judge-model calls take a few
@@ -338,19 +345,32 @@ export default function AgentProfilePage() {
                           fontFamily: 'var(--font-mono)',
                           fontSize: 12,
                           color: 'var(--text-faint)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--sp-2)',
                         }}
                       >
-                        hash: {a.audit_hash.slice(0, 16)}...
+                        <span>hash: {a.audit_hash.slice(0, 16)}...</span>
+                        {(() => {
+                          const anchor = anchors.find((an) => an.audit_hash === a.audit_hash);
+                          return anchor ? (
+                            <a
+                              href={solscanUrl(anchor.tx_signature)}
+                              target="_blank"
+                              rel="noopener"
+                              style={{ color: 'var(--accent)' }}
+                            >
+                              Verify on Solscan →
+                            </a>
+                          ) : (
+                            <span style={{ color: 'var(--warning)' }}>⏳ anchoring on-chain...</span>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <p style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 'var(--sp-3)' }}>
-                On-chain anchoring of this hash (blockchain-service) isn&apos;t
-                wired into this frontend yet — the hash above is real and
-                computed, just not yet written to Solana from here.
-              </p>
             </section>
           </>
         )}

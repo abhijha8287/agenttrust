@@ -17,6 +17,7 @@ pub struct AppState {
     identity_service_url: String,
     agent_core_url: String,
     audit_engine_url: String,
+    blockchain_service_url: String,
     internal_secret: String,
     jwt_secret: String,
 }
@@ -141,6 +142,27 @@ async fn proxy_list_audits(
     forward_response(resp).await
 }
 
+async fn proxy_list_anchors(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Response, StatusCode> {
+    let resp = state
+        .http
+        .get(format!(
+            "{}/agents/{}/anchors",
+            state.blockchain_service_url, id
+        ))
+        .header("x-internal-secret", &state.internal_secret)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "blockchain-service request failed");
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    forward_response(resp).await
+}
+
 async fn forward_response(resp: reqwest::Response) -> Result<Response, StatusCode> {
     let status = StatusCode::from_u16(resp.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     let bytes = resp
@@ -169,6 +191,8 @@ async fn main() {
         env::var("AGENT_CORE_URL").unwrap_or_else(|_| "http://localhost:8083".to_string());
     let audit_engine_url =
         env::var("AUDIT_ENGINE_URL").unwrap_or_else(|_| "http://localhost:8084".to_string());
+    let blockchain_service_url = env::var("BLOCKCHAIN_SERVICE_URL")
+        .unwrap_or_else(|_| "http://localhost:8085".to_string());
     let internal_secret = env::var("INTERNAL_SERVICE_SECRET")
         .expect("INTERNAL_SERVICE_SECRET must be set (deploy-time static secret)");
     let jwt_secret = env::var("CLIENT_JWT_SECRET")
@@ -183,6 +207,7 @@ async fn main() {
         identity_service_url,
         agent_core_url,
         audit_engine_url,
+        blockchain_service_url,
         internal_secret,
         jwt_secret: jwt_secret.clone(),
     };
@@ -196,6 +221,7 @@ async fn main() {
         .route("/agents/:id/execute", post(proxy_execute_action))
         .route("/agents/:id/executions", get(proxy_list_executions))
         .route("/agents/:id/audits", get(proxy_list_audits))
+        .route("/agents/:id/anchors", get(proxy_list_anchors))
         .route_layer(middleware::from_fn(move |req, next| {
             auth::require_client_jwt(jwt_secret.clone(), req, next)
         }));

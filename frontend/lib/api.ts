@@ -133,6 +133,25 @@ export async function listAudits(agentId: string): Promise<Audit[]> {
   return res.json();
 }
 
+export interface ChainAnchor {
+  id: string;
+  identity_agent_id: string;
+  audit_hash: string;
+  trust_score: number;
+  tx_signature: string;
+  created_at: string;
+}
+
+export async function listAnchors(agentId: string): Promise<ChainAnchor[]> {
+  const res = await authedFetch(`/agents/${agentId}/anchors`);
+  if (!res.ok) throw new Error(`failed to list anchors: ${res.status}`);
+  return res.json();
+}
+
+export function solscanUrl(txSignature: string): string {
+  return `https://solscan.io/tx/${txSignature}?cluster=devnet`;
+}
+
 export async function registerAgent(
   req: RegisterAgentRequest
 ): Promise<RegisterAgentResponse> {
