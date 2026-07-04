@@ -1,0 +1,53 @@
+[package]
+name = "agent_trust"
+version = "0.1.0"
+description = "AgentTrust on-chain program: agent identity, trust score, audit hash anchoring"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "agent_trust"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+
+# Pinned: cargo-build-sbf (bundled with Solana CLI 1.18.17) ships cargo
+# 1.75.0, which cannot parse edition2024 manifests — and even the newest
+# available Solana/Agave releases still bundle a too-old cargo for this
+# (tracked upstream: anza-xyz/agave#8443). Each pin below targets the exact
+# crate whose *newest* release adopted edition2024, chosen so the resolver
+# still satisfies every other consumer's semver range — not a blanket
+# downgrade, a surgical one per broken link in the chain:
+#
+#   zeroize_derive 1.5+  -> edition2024   (pulled via zeroize, unconstrained)
+#   blake3 1.8.3+         -> pulls digest 0.11/cpufeatures 0.3/etc (edition2024),
+#                            via solana-program's blake3 dependency
+#   proc-macro-crate 3.2+ -> requires toml_edit >=0.22.20, whose 0.25.x line
+#                            is edition2024; 3.0/3.1 only need toml_edit ^0.21
+#                            (still edition2021), pulled via borsh-derive
+zeroize_derive = "=1.4.2"
+blake3 = "=1.8.2"
+proc-macro-crate = "=3.1.0"
+# toml_edit 0.21.1 (pulled above) still defaults to the newest indexmap
+# (2.14.0, edition2024) since nothing else constrains it lower. 2.13.1 is
+# edition2021 but has MSRV 1.82 (still too new for cargo 1.75.0); 2.9.0 is
+# the newest release with MSRV 1.63, and pulls hashbrown ^0.15.0 with it.
+indexmap = "=2.9.0"
+# borsh 1.7.0 (pulled by solana-program's `borsh ^1.2.1`) needs rustc 1.77+;
+# 1.5.7 has MSRV 1.67 and still satisfies solana-program's range.
+borsh = "=1.5.7"
+# unicode-segmentation 1.13.3 needs rustc 1.85+; 1.12.0 predates the MSRV
+# field entirely (broadly compatible).
+unicode-segmentation = "=1.12.0"
+# anchor-syn 0.30.1's idl-build code calls proc_macro2::Span::source_file(),
+# an unstable API proc_macro2 removed in 1.0.95 (tracked upstream:
+# solana-foundation/anchor#3661/#3662). Pinning below that threshold.
+proc-macro2 = "=1.0.94"

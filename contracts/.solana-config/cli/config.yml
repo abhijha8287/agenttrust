@@ -1,0 +1,7 @@
+---
+json_rpc_url: http://host.docker.internal:8899
+websocket_url: ''
+keypair_path: /root/.config/solana/id.json
+address_labels:
+  '11111111111111111111111111111111': System Program
+commitment: confirmed

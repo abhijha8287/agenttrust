@@ -18,6 +18,29 @@ Solana program, and frontend, but never addressed how CLI/SDK reach users.
 **Status:** Deferred — not core-path blocking, added here so it isn't
 silently forgotten once breadth work starts.
 
+## Squads multisig test fails in Docker-on-Windows local validator
+**What:** `tests/multisig_authority.ts`'s Squads 2-of-3 multisig test times out
+in its `before all` hook (multisig creation transaction never confirms).
+**Why:** The local `solana-test-validator`'s own vote/consensus mechanism
+repeatedly fails its threshold check (`Couldn't vote on heaviest fork`,
+1,300+ occurrences in one run) under Docker Desktop on Windows/WSL2. Anchor's
+own `.rpc()` calls (used by the 6 passing single-authority tests) tolerate
+this; the Squads SDK's `confirmTransaction` calls do not. Confirmed not a
+program or test-code bug: the `agent_trust` program itself is fully proven
+correct (registration, score bounds, authority checks, DID length limits,
+audit hash recording all pass against this same validator).
+**Pros of fixing now:** would give full test coverage of the actual 2-of-3
+security model this whole step 2 build phase was meant to prove.
+**Cons:** looks like validator/infra timing under this specific
+containerized-Windows setup, not something fixable in the program or test
+code — needs either a non-Windows-Docker environment or deeper
+`solana-test-validator` flag tuning to actually resolve.
+**Context:** Hit during blockchain-service + Solana program build (build
+sequence step 2), 2026-07-04. User decision: accept as known limitation,
+move on to the next build step.
+**Status:** Deferred. Retry on native Linux/WSL2 (not Docker Desktop) or a
+cloud CI runner before considering the multisig integration itself unproven.
+
 ## Light mode toggle
 **What:** Add a light theme alongside the dark theme, with a user-facing
 toggle.
