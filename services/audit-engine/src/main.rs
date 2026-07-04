@@ -1,9 +1,10 @@
 mod db;
 mod handlers;
+mod judge;
 
 use axum::{
     middleware,
-    routing::{get, patch, post},
+    routing::{get, post},
     Router,
 };
 use shared::internal_auth::require_internal_secret;
@@ -13,6 +14,10 @@ use std::env;
 #[derive(Clone)]
 pub struct AppState {
     pool: sqlx::PgPool,
+    http: reqwest::Client,
+    identity_service_url: String,
+    internal_secret: String,
+    anthropic_api_key: String,
 }
 
 #[tokio::main]
@@ -20,16 +25,20 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "identity_service=info,tower_http=info".into()),
+                .unwrap_or_else(|_| "audit_engine=info,tower_http=info".into()),
         )
         .init();
 
     let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set (identity-service owns its own database)");
+        .expect("DATABASE_URL must be set (audit-engine owns its own database)");
+    let identity_service_url = env::var("IDENTITY_SERVICE_URL")
+        .unwrap_or_else(|_| "http://localhost:8081".to_string());
     let internal_secret = env::var("INTERNAL_SERVICE_SECRET")
         .expect("INTERNAL_SERVICE_SECRET must be set (deploy-time static secret)");
+    let anthropic_api_key = env::var("ANTHROPIC_API_KEY")
+        .expect("ANTHROPIC_API_KEY must be set (audit-engine calls real judge models)");
     let port: u16 = env::var("PORT")
-        .unwrap_or_else(|_| "8081".to_string())
+        .unwrap_or_else(|_| "8084".to_string())
         .parse()
         .expect("PORT must be a valid number");
 
@@ -37,22 +46,24 @@ async fn main() {
         .max_connections(10)
         .connect(&database_url)
         .await
-        .expect("failed to connect to identity-service database");
+        .expect("failed to connect to audit-engine database");
 
     sqlx::migrate!("./migrations")
         .run(&pool)
         .await
-        .expect("failed to run identity-service migrations");
+        .expect("failed to run audit-engine migrations");
 
-    let state = AppState { pool };
+    let state = AppState {
+        pool,
+        http: reqwest::Client::new(),
+        identity_service_url,
+        internal_secret: internal_secret.clone(),
+        anthropic_api_key,
+    };
 
     let app = Router::new()
-        .route(
-            "/agents",
-            post(handlers::register_agent).get(handlers::list_agents),
-        )
-        .route("/agents/:id", get(handlers::get_agent))
-        .route("/agents/:id/trust-score", patch(handlers::update_trust_score))
+        .route("/audit", post(handlers::audit_execution))
+        .route("/agents/:id/audits", get(handlers::list_audits))
         .route_layer(middleware::from_fn(move |req, next| {
             require_internal_secret(internal_secret.clone(), req, next)
         }))
@@ -61,11 +72,9 @@ async fn main() {
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let addr = format!("0.0.0.0:{port}");
-    tracing::info!(%addr, "identity-service listening");
+    tracing::info!(%addr, "audit-engine listening");
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .expect("failed to bind port");
-    axum::serve(listener, app)
-        .await
-        .expect("server error");
+    axum::serve(listener, app).await.expect("server error");
 }

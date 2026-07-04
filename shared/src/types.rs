@@ -58,6 +58,7 @@ pub struct Agent {
     pub capabilities: serde_json::Value,
     pub verification_status: String,
     pub public_key: Vec<u8>,
+    pub trust_score: i16,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

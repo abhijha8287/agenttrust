@@ -10,6 +10,11 @@ use uuid::Uuid;
 
 use crate::AppState;
 
+pub async fn list_agents(State(state): State<AppState>) -> Result<Json<Vec<Agent>>, AppError> {
+    let agents = crate::db::list_agents(&state.pool).await?;
+    Ok(Json(agents))
+}
+
 pub async fn register_agent(
     State(state): State<AppState>,
     Json(req): Json<RegisterAgentRequest>,
@@ -41,6 +46,29 @@ pub struct AgentDetail {
     #[serde(flatten)]
     pub agent: Agent,
     pub permissions: Vec<Permission>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct UpdateTrustScoreRequest {
+    pub trust_score: i16,
+}
+
+pub async fn update_trust_score(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<UpdateTrustScoreRequest>,
+) -> Result<Json<Agent>, AppError> {
+    if !(0..=100).contains(&req.trust_score) {
+        return Err(AppError::BadRequest(
+            "trust_score must be between 0 and 100".into(),
+        ));
+    }
+
+    let agent = crate::db::update_trust_score(&state.pool, id, req.trust_score)
+        .await?
+        .ok_or_else(|| AppError::NotFound(format!("agent {id} not found")))?;
+
+    Ok(Json(agent))
 }
 
 pub async fn get_agent(

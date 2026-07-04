@@ -15,5 +15,39 @@ services:
       timeout: 3s
       retries: 10
 
+  agent-core-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: agent_core
+      POSTGRES_PASSWORD: agent_core
+      POSTGRES_DB: agent_core
+    ports:
+      - "5434:5432"
+    volumes:
+      - agent-core-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_core"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  audit-engine-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: audit_engine
+      POSTGRES_PASSWORD: audit_engine
+      POSTGRES_DB: audit_engine
+    ports:
+      - "5435:5432"
+    volumes:
+      - audit-engine-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit_engine"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
 volumes:
   identity-db-data:
+  agent-core-db-data:
+  audit-engine-db-data:

@@ -4,6 +4,9 @@ members = [
     "shared",
     "services/identity-service",
     "services/gateway",
+    "services/policy-engine",
+    "services/agent-core",
+    "services/audit-engine",
 ]
 
 [workspace.package]
@@ -25,3 +28,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2"
 jsonwebtoken = "9"
 reqwest = { version = "0.12", features = ["json"] }
+sha2 = "0.10"

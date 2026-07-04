@@ -13,7 +13,7 @@ pub async fn insert_agent(
         INSERT INTO agents (id, did, owner_id, version, capabilities, public_key)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id, did, owner_id, wallet_address, version, capabilities,
-                  verification_status, public_key, created_at, updated_at
+                  verification_status, public_key, trust_score, created_at, updated_at
         "#,
     )
     .bind(id)
@@ -57,12 +57,43 @@ pub async fn get_agent(pool: &PgPool, id: Uuid) -> Result<Option<Agent>, sqlx::E
     sqlx::query_as::<_, Agent>(
         r#"
         SELECT id, did, owner_id, wallet_address, version, capabilities,
-               verification_status, public_key, created_at, updated_at
+               verification_status, public_key, trust_score, created_at, updated_at
         FROM agents WHERE id = $1
         "#,
     )
     .bind(id)
     .fetch_optional(pool)
+    .await
+}
+
+pub async fn update_trust_score(
+    pool: &PgPool,
+    id: Uuid,
+    trust_score: i16,
+) -> Result<Option<Agent>, sqlx::Error> {
+    sqlx::query_as::<_, Agent>(
+        r#"
+        UPDATE agents SET trust_score = $1, updated_at = now()
+        WHERE id = $2
+        RETURNING id, did, owner_id, wallet_address, version, capabilities,
+                  verification_status, public_key, trust_score, created_at, updated_at
+        "#,
+    )
+    .bind(trust_score)
+    .bind(id)
+    .fetch_optional(pool)
+    .await
+}
+
+pub async fn list_agents(pool: &PgPool) -> Result<Vec<Agent>, sqlx::Error> {
+    sqlx::query_as::<_, Agent>(
+        r#"
+        SELECT id, did, owner_id, wallet_address, version, capabilities,
+               verification_status, public_key, trust_score, created_at, updated_at
+        FROM agents ORDER BY created_at DESC
+        "#,
+    )
+    .fetch_all(pool)
     .await
 }
 

@@ -3,6 +3,25 @@
 version = 4
 
 [[package]]
+name = "agent-core"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -51,6 +70,26 @@ name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+
+[[package]]
+name = "audit-engine"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "shared",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
 
 [[package]]
 name = "autocfg"
@@ -518,6 +557,7 @@ name = "gateway"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "chrono",
  "jsonwebtoken",
  "reqwest",
  "serde",
@@ -1311,6 +1351,23 @@ name = "plain"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
+
+[[package]]
+name = "policy-engine"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "shared",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
 
 [[package]]
 name = "potential_utf"

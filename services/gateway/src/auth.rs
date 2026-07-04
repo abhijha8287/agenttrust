@@ -10,18 +10,49 @@
 
 use axum::{
     body::Body,
-    extract::Request,
+    extract::{Request, State},
     http::{header, StatusCode},
     middleware::Next,
     response::Response,
+    Json,
 };
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DevSessionRequest {
+    pub sub: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DevSessionResponse {
+    pub token: String,
+}
+
+/// Dev-only session issuance — mints a JWT for any caller-supplied `sub`
+/// with no verification of who they claim to be. Stand-in for the
+/// wallet-signature auth that's still an open design-doc question (see
+/// module doc comment); this exists so the frontend has a token to send
+/// before that's built, not a decision that this is how auth will work.
+pub async fn issue_dev_session(
+    State(state): State<crate::AppState>,
+    Json(req): Json<DevSessionRequest>,
+) -> Result<Json<DevSessionResponse>, StatusCode> {
+    let exp = (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize;
+    let claims = Claims { sub: req.sub, exp };
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
+    )
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Json(DevSessionResponse { token }))
 }
 
 pub async fn require_client_jwt(
