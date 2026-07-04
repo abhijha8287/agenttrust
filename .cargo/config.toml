@@ -1,0 +1,5 @@
+[build]
+# OneDrive syncs this project directory in real time, which intermittently
+# locks Cargo's build artifacts mid-write (os error 32) on Windows. Building
+# to a local, non-synced directory avoids the race entirely.
+target-dir = "C:/rust-targets/agenttrust"
