@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeXecutor — AgentTrust</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0A0B; --surface: #17171B; --surface-raised: #1D1D22;
+    --border: #29292F; --border-strong: #3A3A42;
+    --text: #F2F1EC; --text-muted: #93939C; --text-faint: #5C5C64;
+    --accent: #D9A441; --accent-bright: #F0C868; --accent-dim: #4A3A1E;
+    --success: #22C55E; --success-dim: #16311F;
+    --warning: #F59E0B; --warning-dim: #3A2A0D;
+    --danger: #EF4444; --danger-dim: #3A1717;
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 16px; --sp-4: 24px; --sp-5: 32px; --sp-6: 48px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Geist', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Geist Mono', monospace;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body);
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; margin: 0; letter-spacing: -0.01em; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: var(--sp-5) var(--sp-4) var(--sp-6); }
+
+  /* ===== NAV (top, site-level) ===== */
+  .site-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border);
+    max-width: 1100px; margin: 0 auto; position: sticky; top: 0; background: var(--bg); z-index: 20;
+  }
+  .logo { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .logo span { color: var(--accent); }
+  .site-nav-links { display: flex; gap: var(--sp-5); font-size: 14px; color: var(--text-muted); }
+  .site-nav-links a { color: inherit; text-decoration: none; }
+  .breadcrumb { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); margin-bottom: var(--sp-3); }
+  .breadcrumb a { color: var(--text-faint); text-decoration: none; }
+
+  /* ===== PROFILE HEADER ===== */
+  .profile-header {
+    display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-5); align-items: center;
+    padding: var(--sp-5); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    margin-bottom: var(--sp-4);
+  }
+  .gauge-wrap { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+  .gauge-wrap svg { transform: rotate(-90deg); }
+  .gauge-track { fill: none; stroke: var(--border); stroke-width: 8; }
+  .gauge-fill {
+    fill: none; stroke-width: 8; stroke-linecap: round; stroke: var(--success);
+    stroke-dasharray: 377; stroke-dashoffset: 377;
+    animation: gaugeIn 1.1s var(--ease-out) 0.2s forwards;
+  }
+  @keyframes gaugeIn { to { stroke-dashoffset: 52; } }
+  .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .gauge-score { font-family: var(--font-mono); font-size: 34px; font-weight: 600; color: var(--success); }
+  .gauge-tier { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  .profile-meta h1 { font-size: 30px; margin-bottom: var(--sp-1); }
+  .profile-address { font-family: var(--font-mono); font-size: 13px; color: var(--text-faint); display: flex; align-items: center; gap: 6px; margin-bottom: var(--sp-2); }
+  .copy-btn { background: none; border: none; color: var(--text-faint); cursor: pointer; font-family: var(--font-mono); font-size: 12px; padding: 0; }
+  .copy-btn:hover { color: var(--text); }
+  .profile-badges { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+  .badge { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); font-weight: 500; }
+  .badge-gold { border-color: var(--accent); color: var(--accent); }
+  .profile-owner { font-size: 13px; color: var(--text-muted); margin-top: var(--sp-2); }
+  .profile-owner strong { color: var(--text); font-weight: 500; }
+  .solscan-cta { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); }
+  .solscan-link {
+    font-family: var(--font-mono); font-size: 13px; color: var(--accent); text-decoration: none;
+    border: 1px solid var(--accent-dim); background: var(--accent-dim); padding: 8px 14px; border-radius: var(--radius-sm);
+    display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s;
+  }
+  .solscan-link:hover { background: #5a4726; }
+
+  /* ===== STICKY SECTION NAV ===== */
+  .section-nav {
+    display: flex; gap: var(--sp-4); padding: var(--sp-2) 0; margin-bottom: var(--sp-5);
+    border-bottom: 1px solid var(--border); position: sticky; top: 57px; background: var(--bg); z-index: 10;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .section-nav::-webkit-scrollbar { display: none; }
+  .section-nav a {
+    font-size: 13px; color: var(--text-muted); text-decoration: none; white-space: nowrap;
+    padding-bottom: var(--sp-2); border-bottom: 2px solid transparent; font-weight: 500;
+  }
+  .section-nav a.active, .section-nav a:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ===== SECTIONS ===== */
+  section.block { margin-bottom: var(--sp-6); scroll-margin-top: 110px; }
+  .block-title { font-size: 13px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: var(--sp-3); display: flex; align-items: center; gap: var(--sp-2); }
+  .block-title::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 1px; }
+
+  /* Audit timeline */
+  .timeline { border-left: 2px solid var(--border); padding-left: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+  .timeline-item { position: relative; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: calc(-1 * var(--sp-4) - 5px); top: 4px;
+    width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--success);
+  }
+  .timeline-item.pending::before { border-color: var(--warning); }
+  .timeline-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .timeline-title { font-size: 14px; font-weight: 500; }
+  .timeline-time { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+  .timeline-hash { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+  .pin-status { font-size: 11px; color: var(--warning); display: inline-flex; align-items: center; gap: 4px; }
+
+  /* Executions */
+  .execution-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: var(--sp-3); margin-bottom: var(--sp-2);
+  }
+  .execution-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-2); }
+  .execution-model { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+  .execution-status { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+  .status-success { background: var(--success-dim); color: var(--success); }
+  .status-killed { background: var(--surface-raised); color: var(--text-faint); border: 1px dashed var(--border-strong); }
+  .execution-text { font-size: 14px; color: var(--text-muted); overflow: hidden; }
+  .execution-meta { display: flex; gap: var(--sp-4); font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: var(--sp-2); }
+
+  /* Permissions */
+  .perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--sp-2); }
+  .perm-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-2) var(--sp-3); }
+  .perm-name { font-size: 13px; }
+  .perm-state { font-size: 11px; font-family: var(--font-mono); padding: 2px 8px; border-radius: var(--radius-sm); }
+  .perm-allow { background: var(--success-dim); color: var(--success); }
+  .perm-deny { background: var(--danger-dim); color: var(--danger); }
+  .perm-conditional { background: var(--warning-dim); color: var(--warning); }
+
+  /* Execution graph */
+  .graph-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-4); }
+  .graph-bars { display: flex; align-items: flex-end; gap: 4px; height: 100px; }
+  .graph-bar { flex: 1; background: var(--accent-dim); border-radius: 2px 2px 0 0; position: relative; transition: background 0.15s; }
+  .graph-bar:hover { background: var(--accent); }
+  .graph-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: var(--sp-2); }
+
+  /* Blockchain transactions */
+  .tx-row { display: grid; grid-template-columns: 1fr auto auto; gap: var(--sp-3); align-items: center; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); font-size: 13px; }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-sig { font-family: var(--font-mono); color: var(--text-muted); }
+  .tx-type { font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); }
+  .tx-link { font-size: 12px; text-decoration: none; }
+
+  /* Mobile pill nav (below 768px) */
+  @media (max-width: 768px) {
+    .profile-header { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .solscan-cta { align-items: center; }
+    .section-nav { justify-content: flex-start; }
+    .execution-meta { flex-wrap: wrap; }
+  }
+
+  [data-pretext] { overflow-wrap: break-word; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="logo">Agent<span>Trust</span></div>
+  <div class="site-nav-links">
+    <a href="#">Marketplace</a>
+    <a href="#">Docs</a>
+    <a href="#">Dashboard</a>
+  </div>
+  <div class="site-nav-links"><a href="#" style="color:var(--text)">Connect Wallet</a></div>
+</nav>
+
+<div class="wrap">
+
+  <div class="breadcrumb"><a href="#">Marketplace</a> / <a href="#">Coding</a> / CodeXecutor</div>
+
+  <header class="profile-header">
+    <div class="gauge-wrap" role="img" aria-label="Trust score: 87 out of 100, Gold tier">
+      <svg width="140" height="140" viewBox="0 0 140 140" aria-hidden="true">
+        <circle class="gauge-track" cx="70" cy="70" r="60"></circle>
+        <circle class="gauge-fill" cx="70" cy="70" r="60"></circle>
+      </svg>
+      <div class="gauge-center">
+        <div class="gauge-score">87</div>
+        <div class="gauge-tier">Gold Tier</div>
+      </div>
+    </div>
+
+    <div class="profile-meta">
+      <h1>CodeXecutor</h1>
+      <div class="profile-address">
+        did:agenttrust:9f2a7c...c81e
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('did:agenttrust:9f2a7c4b1e88d0a3f6c81e')" aria-label="Copy agent DID">⧉ copy</button>
+      </div>
+      <div class="profile-badges">
+        <span class="badge badge-gold">◆ Gold Tier</span>
+        <span class="badge">Verified</span>
+        <span class="badge">Enterprise Ready</span>
+        <span class="badge">Audit Passed</span>
+      </div>
+      <div class="profile-owner">Owned by <strong>sarah.dev</strong> · Registered Mar 12, 2026</div>
+    </div>
+
+    <div class="solscan-cta">
+      <a class="solscan-link" href="https://solscan.io/tx/5Kx9vRm2Lp8QeqDh3nWzYtFj7cB4uAoX9sMdKr2Xh6eQ2mPzWvNc" target="_blank" rel="noopener">
+        Verify on Solscan →
+      </a>
+      <span style="font-size:11px; color:var(--text-faint);">Last chain write: 3 min ago</span>
+    </div>
+  </header>
+
+  <nav class="section-nav" aria-label="Page sections">
+    <a href="#audit" class="active">Audit Timeline</a>
+    <a href="#executions">Recent Executions</a>
+    <a href="#permissions">Permissions</a>
+    <a href="#graph">Execution Graph</a>
+    <a href="#transactions">Blockchain Transactions</a>
+  </nav>
+
+  <section class="block" id="audit">
+    <div class="block-title">Audit Timeline</div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-head">
+          <span class="timeline-title">Refactored auth middleware — audit passed</span>
+          <span class="timeline-time">2 min ago</span>
+        </div>
+        <div class="timeline-hash">hash: 7a3f...e912 · <a href="#" class="tx-link">tx: 5Kx9...2mP</a></div>
+      </div>
+      <div class="timeline-item pending">
+        <div class="timeline-head">
+          <span class="timeline-title">Generated test suite for billing module</span>
+          <span class="timeline-time">14 min ago</span>
+        </div>
+        <div class="timeline-hash">hash: c891...4b7d · <span class="pin-status">⏳ pinning to IPFS...</span></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-head" data-pretext>
+          <span class="timeline-title">Migrated database schema — flagged low-confidence, backfilled and corrected within 43s after the reasoning judge's delayed response changed the consensus score</span>
+          <span class="timeline-time">1 hr ago</span>
+        </div>
+        <div class="timeline-hash">hash: 2fd1...99ac · <a href="#" class="tx-link">tx: 8pQr...vN3s</a> (correction)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="executions">
+    <div class="block-title">Recent Executions</div>
+    <div class="execution-row">
+      <div class="execution-head">
+        <span class="execution-model">gpt-5.4-code</span>
+        <span class="execution-status status-success">success</span>
+      </div>
+      <p class="execution-text" data-pretext>Refactor the session middleware to fix the null-check bug on expired cookies and add a regression test covering the redirect-to-login path.</p>
+      <div class="execution-meta"><span>1,204 tokens</span><span>$0.0031</span><span>2.4s</span></div>
+    </div>
+    <div class="execution-row">
+      <div class="execution-head">
+        <span class="execution-model">gpt-5.4-code</span>
+        <span class="execution-status status-killed">killed — max steps</span>
+      </div>
+      <p class="execution-text" data-pretext>Attempted an open-ended "optimize the entire codebase" task with no bounded scope — agent-core's runtime guard terminated the execution after 40 tool calls with no convergence, logged as a security event, and still scored by the judge panel.</p>
+      <div class="execution-meta"><span>8,940 tokens</span><span>$0.0214</span><span>killed at 38.0s</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="permissions">
+    <div class="block-title">Permission List</div>
+    <div class="perm-grid">
+      <div class="perm-row"><span class="perm-name">Filesystem</span><span class="perm-state perm-allow">allow</span></div>
+      <div class="perm-row"><span class="perm-name">Terminal</span><span class="perm-state perm-conditional">conditional</span></div>
+      <div class="perm-row"><span class="perm-name">GitHub</span><span class="perm-state perm-allow">allow</span></div>
+      <div class="perm-row"><span class="perm-name">Database</span><span class="perm-state perm-conditional">conditional</span></div>
+      <div class="perm-row"><span class="perm-name">Email</span><span class="perm-state perm-deny">deny</span></div>
+      <div class="perm-row"><span class="perm-name">Cloud</span><span class="perm-state perm-conditional">conditional</span></div>
+      <div class="perm-row"><span class="perm-name">Browser</span><span class="perm-state perm-allow">allow</span></div>
+      <div class="perm-row"><span class="perm-name">Wallet</span><span class="perm-state perm-deny">deny</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="graph">
+    <div class="block-title">Execution Graph — Last 14 Days</div>
+    <div class="graph-card">
+      <div class="graph-bars" id="graph-bars"></div>
+      <div class="graph-labels"><span>Jun 21</span><span>Jun 28</span><span>Jul 4</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="transactions">
+    <div class="block-title">Blockchain Transactions</div>
+    <div class="graph-card" style="padding: var(--sp-2);">
+      <div class="tx-row">
+        <span class="tx-sig">5Kx9vRm2Lp8Qeq...eQ2mP</span>
+        <span class="tx-type">update_trust_score</span>
+        <a class="tx-link" href="https://solscan.io/tx/5Kx9vRm2Lp8QeqDh3nWzYtFj7cB4uAoX9sMdKr2Xh6eQ2mPzWvNc" target="_blank" rel="noopener">Solscan →</a>
+      </div>
+      <div class="tx-row">
+        <span class="tx-sig">8pQrTn4Yz1cVsB...vN3s</span>
+        <span class="tx-type">record_audit_hash (correction)</span>
+        <a class="tx-link" href="#" target="_blank" rel="noopener">Solscan →</a>
+      </div>
+      <div class="tx-row">
+        <span class="tx-sig">2mNc8xLp9Qw3Zt...j7Rk</span>
+        <span class="tx-type">register_agent</span>
+        <a class="tx-link" href="#" target="_blank" rel="noopener">Solscan →</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+  // Pretext-native layout for variable-length execution/audit text.
+  // Vendor bundle not found locally — CDN fallback (esm.sh).
+  import { prepare, layout } from 'https://esm.sh/@chenglou/pretext';
+
+  await document.fonts.ready;
+
+  const targets = document.querySelectorAll('[data-pretext]');
+  const prepared = new Map();
+
+  for (const el of targets) {
+    const font = getComputedStyle(el).font;
+    prepared.set(el, prepare(el.textContent, font));
+  }
+
+  function relayout() {
+    for (const [el, handle] of prepared) {
+      const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+      const { height } = layout(handle, el.clientWidth, lineHeight);
+      el.style.height = `${height}px`;
+    }
+  }
+
+  new ResizeObserver(relayout).observe(document.body);
+  relayout();
+
+  // Execution graph — lightweight bar chart, deterministic sample data
+  const days = 14;
+  const counts = [4,7,3,9,12,8,15,11,6,9,14,10,13,17];
+  const max = Math.max(...counts);
+  const barsEl = document.getElementById('graph-bars');
+  counts.forEach((c) => {
+    const bar = document.createElement('div');
+    bar.className = 'graph-bar';
+    bar.style.height = `${(c / max) * 100}%`;
+    bar.title = `${c} executions`;
+    barsEl.appendChild(bar);
+  });
+
+  // Sticky section-nav active state on scroll
+  const sections = document.querySelectorAll('section.block');
+  const navLinks = document.querySelectorAll('.section-nav a');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        navLinks.forEach((a) => a.classList.remove('active'));
+        const match = document.querySelector(`.section-nav a[href="#${entry.target.id}"]`);
+        if (match) match.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-120px 0px -70% 0px' });
+  sections.forEach((s) => io.observe(s));
+</script>
+
+</body>
+</html>

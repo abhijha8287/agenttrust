@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — AgentTrust</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0A0B; --surface: #17171B; --surface-raised: #1D1D22;
+    --border: #29292F; --border-strong: #3A3A42;
+    --text: #F2F1EC; --text-muted: #93939C; --text-faint: #5C5C64;
+    --accent: #D9A441; --accent-bright: #F0C868; --accent-dim: #4A3A1E;
+    --success: #22C55E; --success-dim: #16311F;
+    --warning: #F59E0B; --warning-dim: #3A2A0D;
+    --danger: #EF4444; --danger-dim: #3A1717;
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 16px; --sp-4: 24px; --sp-5: 32px; --sp-6: 48px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Geist', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Geist Mono', monospace;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body);
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  @media (prefers-reduced-motion: reduce) { *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  h1, h2 { font-family: var(--font-display); font-weight: 500; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: var(--sp-5) var(--sp-4) var(--sp-6); }
+
+  .site-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border);
+    max-width: 1200px; margin: 0 auto; position: sticky; top: 0; background: var(--bg); z-index: 20;
+  }
+  .logo { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .logo span { color: var(--accent); }
+  .site-nav-links { display: flex; gap: var(--sp-5); font-size: 14px; color: var(--text-muted); }
+  .site-nav-links a { color: inherit; text-decoration: none; }
+  .site-nav-links a.current { color: var(--text); }
+
+  .page-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--sp-4); }
+  .page-head h1 { font-size: 28px; }
+  .conn-status { font-family: var(--font-mono); font-size: 12px; color: var(--success); display: flex; align-items: center; gap: 6px; }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .conn-status.reconnecting { color: var(--warning); }
+  .conn-status.reconnecting .conn-dot { background: var(--warning); }
+
+  /* Metric cards */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-5); }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-3); }
+  .metric-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-bottom: var(--sp-2); }
+  .metric-value { font-family: var(--font-mono); font-size: 28px; font-weight: 600; }
+  .metric-value.success { color: var(--success); }
+  .metric-value.warning { color: var(--warning); }
+  .metric-value.danger { color: var(--danger); }
+  .metric-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .metric-alert-list { display: flex; flex-direction: column; gap: 6px; }
+  .metric-alert-item { font-size: 12px; color: var(--text-muted); display: flex; gap: 6px; align-items: baseline; }
+  .alert-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+
+  /* Live feed */
+  .feed-section { }
+  .section-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: var(--sp-3); display:flex; align-items:center; gap:8px; }
+  .section-label::before { content:''; width:6px; height:6px; background: var(--accent); border-radius:1px; }
+  .feed-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .feed-row {
+    display: grid; grid-template-columns: 90px 1fr 100px 80px; gap: var(--sp-3); align-items: center;
+    padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border);
+    animation: rowIn 0.4s var(--ease-out) forwards;
+  }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .feed-row:last-child { border-bottom: none; }
+  .feed-row.killed { opacity: 0.55; }
+  .feed-agent { font-size: 13px; font-weight: 500; }
+  .feed-desc { font-size: 13px; color: var(--text-muted); overflow: hidden; }
+  .feed-status { font-size: 11px; padding: 2px 8px; border-radius: 999px; justify-self: start; }
+  .status-success { background: var(--success-dim); color: var(--success); }
+  .status-killed { background: var(--surface-raised); color: var(--text-faint); border: 1px dashed var(--border-strong); }
+  .status-lowconf { background: var(--warning-dim); color: var(--warning); }
+  .feed-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-align: right; }
+
+  /* Empty state */
+  .empty-feed { text-align: center; padding: var(--sp-6) var(--sp-4); color: var(--text-muted); }
+  .empty-feed h3 { font-size: 17px; color: var(--text); margin-bottom: var(--sp-2); font-family: var(--font-display); font-weight: 500; }
+  .btn { font-family: var(--font-body); font-size: 14px; font-weight: 500; padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; margin-top: var(--sp-3); }
+  .btn-primary { background: var(--accent); color: #1A1408; }
+
+  @media (max-width: 1024px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    .feed-row { grid-template-columns: 1fr; gap: 4px; }
+    .feed-time { text-align: left; }
+  }
+  [data-pretext] { overflow-wrap: break-word; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="logo">Agent<span>Trust</span></div>
+  <div class="site-nav-links">
+    <a href="#">Marketplace</a>
+    <a href="#">Docs</a>
+    <a href="#" class="current">Dashboard</a>
+  </div>
+  <div class="site-nav-links"><a href="#" style="color:var(--text)">sarah.dev</a></div>
+</nav>
+
+<div class="wrap">
+
+  <div class="page-head">
+    <h1>Your Agents</h1>
+    <div class="conn-status" id="conn-status"><span class="conn-dot"></span> Live</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Aggregate Trust Score</div>
+      <div class="metric-value success">82</div>
+      <div class="metric-sub">across 4 agents</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Safety Score</div>
+      <div class="metric-value success">91</div>
+      <div class="metric-sub">0 critical flags this week</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Security Score</div>
+      <div class="metric-value success">88</div>
+      <div class="metric-sub">last audit 2h ago</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Executions</div>
+      <div class="metric-value">3,845</div>
+      <div class="metric-sub">+412 today</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Daily Requests</div>
+      <div class="metric-value">412</div>
+      <div class="metric-sub">avg 2.1s response</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Failures</div>
+      <div class="metric-value warning">7</div>
+      <div class="metric-sub">1.7% of today's runs</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Blockchain Records</div>
+      <div class="metric-value">3,801</div>
+      <div class="metric-sub">all verifiable on Solscan</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Recent Alerts</div>
+      <div class="metric-alert-list">
+        <div class="metric-alert-item"><span class="alert-dot" style="background:var(--warning)"></span> FinanceBot flagged low-confidence</div>
+        <div class="metric-alert-item"><span class="alert-dot" style="background:var(--danger)"></span> CodeXecutor killed — max steps</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feed-section">
+    <div class="section-label">Live Execution Feed</div>
+    <div class="feed-card" id="feed"></div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { prepare, layout } from 'https://esm.sh/@chenglou/pretext';
+  await document.fonts.ready;
+
+  const executions = [
+    { agent: 'CodeXecutor', desc: 'Refactored session middleware, added regression test for expired-cookie redirect.', status: 'success', time: 'now' },
+    { agent: 'SecuritySentry', desc: 'Ran dependency audit on 3 repos before merge to main.', status: 'success', time: '4s ago' },
+    { agent: 'FinanceBot', desc: 'Analyzed Q2 filing — judge quorum not met, scored provisionally.', status: 'lowconf', time: '18s ago' },
+    { agent: 'CodeXecutor', desc: 'Open-ended "optimize the codebase" task — killed after 40 tool calls, no convergence.', status: 'killed', time: '41s ago' },
+    { agent: 'DataWrangler', desc: 'Joined 6 CSV exports into a single analysis-ready parquet file.', status: 'success', time: '1m ago' },
+  ];
+
+  const feed = document.getElementById('feed');
+  const prepared = new Map();
+  const statusMap = { success: ['status-success', 'success'], lowconf: ['status-lowconf', 'low-confidence'], killed: ['status-killed', 'killed'] };
+
+  executions.forEach((e, i) => {
+    const row = document.createElement('div');
+    row.className = 'feed-row' + (e.status === 'killed' ? ' killed' : '');
+    row.style.animationDelay = `${i * 80}ms`;
+    const [cls, label] = statusMap[e.status];
+    row.innerHTML = `
+      <span class="feed-agent">${e.agent}</span>
+      <span class="feed-desc" data-pretext>${e.desc}</span>
+      <span class="feed-status ${cls}">${label}</span>
+      <span class="feed-time">${e.time}</span>
+    `;
+    feed.appendChild(row);
+    const descEl = row.querySelector('[data-pretext]');
+    prepared.set(descEl, prepare(descEl.textContent, getComputedStyle(descEl).font));
+  });
+
+  function relayout() {
+    for (const [el, handle] of prepared) {
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+      const { height } = layout(handle, el.clientWidth, lh);
+      el.style.height = `${height}px`;
+    }
+  }
+  new ResizeObserver(relayout).observe(document.body);
+  relayout();
+
+  // Simulate a brief reconnect to demonstrate the "never silently stop" state
+  const connStatus = document.getElementById('conn-status');
+  setTimeout(() => {
+    connStatus.className = 'conn-status reconnecting';
+    connStatus.innerHTML = '<span class="conn-dot"></span> Reconnecting...';
+    setTimeout(() => {
+      connStatus.className = 'conn-status';
+      connStatus.innerHTML = '<span class="conn-dot"></span> Live';
+    }, 2200);
+  }, 4000);
+</script>
+
+</body>
+</html>
