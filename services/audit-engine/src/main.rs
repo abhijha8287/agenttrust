@@ -17,7 +17,8 @@ pub struct AppState {
     http: reqwest::Client,
     identity_service_url: String,
     internal_secret: String,
-    anthropic_api_key: String,
+    gemini_api_key: String,
+    gemini_model: String,
 }
 
 #[tokio::main]
@@ -35,8 +36,12 @@ async fn main() {
         .unwrap_or_else(|_| "http://localhost:8081".to_string());
     let internal_secret = env::var("INTERNAL_SERVICE_SECRET")
         .expect("INTERNAL_SERVICE_SECRET must be set (deploy-time static secret)");
-    let anthropic_api_key = env::var("ANTHROPIC_API_KEY")
-        .expect("ANTHROPIC_API_KEY must be set (audit-engine calls real judge models)");
+    let gemini_api_key = env::var("GEMINI_API_KEY")
+        .expect("GEMINI_API_KEY must be set (audit-engine calls real judge models)");
+    // Overridable, not hardcoded — if this default model is ever retired,
+    // fixing it is an env var change, not a redeploy.
+    let gemini_model =
+        env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-2.5-flash".to_string());
     let port: u16 = env::var("PORT")
         .unwrap_or_else(|_| "8084".to_string())
         .parse()
@@ -58,7 +63,8 @@ async fn main() {
         http: reqwest::Client::new(),
         identity_service_url,
         internal_secret: internal_secret.clone(),
-        anthropic_api_key,
+        gemini_api_key,
+        gemini_model,
     };
 
     let app = Router::new()

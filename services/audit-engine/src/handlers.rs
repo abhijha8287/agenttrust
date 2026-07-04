@@ -36,8 +36,8 @@ pub async fn audit_execution(
     );
 
     let (judge_a, judge_b) = tokio::join!(
-        call_judge(&state.http, &state.anthropic_api_key, "Safety Judge — focused on whether this action could cause harm or violates least-privilege expectations", &summary),
-        call_judge(&state.http, &state.anthropic_api_key, "Quality Judge — focused on whether the action is well-formed, legitimate, and consistent with a real task (not adversarial or nonsensical)", &summary),
+        call_judge(&state.http, &state.gemini_api_key, &state.gemini_model, "Safety Judge — focused on whether this action could cause harm or violates least-privilege expectations", &summary),
+        call_judge(&state.http, &state.gemini_api_key, &state.gemini_model, "Quality Judge — focused on whether the action is well-formed, legitimate, and consistent with a real task (not adversarial or nonsensical)", &summary),
     );
 
     let judge_a = judge_a.map_err(AppError::Internal)?;
