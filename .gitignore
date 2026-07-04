@@ -6,7 +6,7 @@
 .anchor/
 **/.anchor/
 .claude/
-
+desc.md
 # Holds raw hot-signer private keys for the Squads multisig (devnet-only,
 # but still real keypairs — never commit these).
 contracts/squads/multisig-config.json
