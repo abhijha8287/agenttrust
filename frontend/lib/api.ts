@@ -1,4 +1,4 @@
-import { getSession } from './session';
+import { getSession, clearSession } from './session';
 
 const GATEWAY_URL =
   process.env.NEXT_PUBLIC_GATEWAY_URL ?? 'http://localhost:8080';
@@ -64,6 +64,22 @@ async function authedFetch(path: string, init?: RequestInit): Promise<Response> 
       authorization: `Bearer ${token}`,
     },
   });
+
+  // A cached dev token can outlive the gateway process that minted it (its
+  // CLIENT_JWT_SECRET is generated fresh per run) — re-mint once and retry
+  // rather than surfacing a 401 the user can't do anything about.
+  if (res.status === 401) {
+    clearSession();
+    const { token: freshToken } = await getSession(true);
+    return fetch(`${GATEWAY_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        authorization: `Bearer ${freshToken}`,
+      },
+    });
+  }
+
   return res;
 }
 

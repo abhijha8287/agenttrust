@@ -18,9 +18,13 @@ function getOwnerId(): string {
   return ownerId;
 }
 
-export async function getSession(): Promise<{ ownerId: string; token: string }> {
+export function clearSession(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+export async function getSession(forceRefresh = false): Promise<{ ownerId: string; token: string }> {
   const ownerId = getOwnerId();
-  const cached = localStorage.getItem(TOKEN_KEY);
+  const cached = !forceRefresh && localStorage.getItem(TOKEN_KEY);
   if (cached) {
     return { ownerId, token: cached };
   }
